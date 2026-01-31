@@ -36,6 +36,10 @@ ALLOWED_HOSTS = [
     '192.168.100.253'
     ]
 
+# CSRF Settings because JWT is being used
+CSRF_COOKIE_SAMESITE = None
+CSRF_COOKIE_HTTPONLY = False
+
 if DEBUG:
     # Add this to your settings
     SITE_DOMAIN = 'http://127.0.0.1:8000'
@@ -100,6 +104,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'imhotep_tasks.middleware.DisableCSRFForAPIMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',

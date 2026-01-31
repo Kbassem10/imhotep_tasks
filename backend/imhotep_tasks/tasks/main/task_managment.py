@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from ..models import Tasks
 from ..utils import tasks_managements_utils
+from django.views.decorators.csrf import csrf_exempt
 
 #the user today_tasks function
 @api_view(['GET'])
@@ -126,6 +127,7 @@ def next_week_tasks(request):
     }
     return Response(response_data, status=status.HTTP_200_OK)
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_task(request):

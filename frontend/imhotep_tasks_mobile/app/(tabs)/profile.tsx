@@ -20,6 +20,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useUpdateChecker } from '@/hooks/use-update-checker';
 import api from '@/constants/api';
 
 // Theme colors
@@ -66,6 +67,7 @@ const themes = {
 
 export default function ProfileScreen() {
   const { user, logout, updateUser, token } = useAuth();
+  const { checking: checkingUpdates, checkForUpdates } = useUpdateChecker();
   const backgroundColor = useThemeColor({}, 'background');
   const colorScheme = useColorScheme();
   const colors = themes[colorScheme === 'dark' ? 'dark' : 'light'];
@@ -477,6 +479,22 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* Check for Updates Button */}
+        <Pressable 
+          style={[styles.updateButton, { backgroundColor: colors.primary }]} 
+          onPress={() => checkForUpdates()}
+          disabled={checkingUpdates}
+        >
+          {checkingUpdates ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <>
+              <Ionicons name="cloud-download-outline" size={24} color="#fff" />
+              <ThemedText style={styles.updateButtonText}>Check for Updates</ThemedText>
+            </>
+          )}
+        </Pressable>
+
         {/* Logout Button */}
         <Pressable style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={24} color="#fff" />
@@ -702,6 +720,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  updateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    marginHorizontal: 16,
+    marginTop: 24,
+    borderRadius: 8,
+    gap: 8,
+  },
+  updateButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -709,7 +742,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444',
     paddingVertical: 14,
     marginHorizontal: 16,
-    marginTop: 24,
+    marginTop: 12,
     marginBottom: 32,
     borderRadius: 8,
     gap: 8,

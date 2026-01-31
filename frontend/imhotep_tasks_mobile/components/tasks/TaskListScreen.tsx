@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   Pressable,
@@ -27,7 +27,7 @@ import {
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTasks, TaskPageType } from '@/hooks/use-tasks';
-
+import { useTaskModal } from '@/contexts/TaskModalContext';
 // Theme colors matching routines.tsx and auth pages
 const themes = {
   light: {
@@ -115,6 +115,21 @@ export function TaskListScreen({ pageType, title, username, showNavButtons = fal
     handleBulkComplete,
     handleBulkUpdateDate,
   } = useTasks({ pageType, sortOverdueFirst: pageType === 'today-tasks' });
+
+  const { setOnTaskAdded } = useTaskModal();
+
+  // Register the refresh callback when a task is added from the global modal
+  useEffect(() => {
+    const refreshCallback = () => {
+      fetchTasks(1);
+    };
+    setOnTaskAdded(refreshCallback);
+    
+    // Cleanup on unmount
+    return () => {
+      setOnTaskAdded(null);
+    };
+  }, [fetchTasks, setOnTaskAdded]);
 
   useEffect(() => {
     fetchTasks(1);

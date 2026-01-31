@@ -1,5 +1,5 @@
 import { Tabs, Redirect } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -8,7 +8,9 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTaskModal } from '@/contexts/TaskModalContext';
 import { TaskFormModal } from '@/components/tasks';
+import api from '@/constants/api';
 
 // Theme colors for the layout
 const themes = {
@@ -39,8 +41,27 @@ const themes = {
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { isAuthenticated, loading, token } = useAuth();
+  const { onTaskAdded } = useTaskModal();
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [addTaskLoading, setAddTaskLoading] = useState(false);
   const colors = themes[colorScheme ?? 'light'];
+
+  const handleAddTask = useCallback(async (formData: { task_title: string; task_details: string; due_date: string }) => {
+    setAddTaskLoading(true);
+    try {
+      await api.post('api/tasks/add_task/', formData);
+      // Call the refresh callback if registered
+      if (onTaskAdded) {
+        onTaskAdded();
+      }
+      setShowAddTaskModal(false);
+    } catch (error) {
+      console.error('Failed to add task:', error);
+      throw error; // Re-throw to show error in modal
+    } finally {
+      setAddTaskLoading(false);
+    }
+  }, [onTaskAdded]);
 
   // Show loading screen while checking auth
   if (loading) {
@@ -143,22 +164,9 @@ export default function TabLayout() {
       {/* Global Add Task Modal */}
       <TaskFormModal
         visible={showAddTaskModal}
-        onClose={() => setShowAddTaskModal(false)}
-        onSubmit={async (formData) => {
-          // Import api here to avoid circular dependencies
-          const api = (await import('@/constants/api')).default;
-          try {
-            await api.post('api/add_task/', formData, {
-              headers: { Authorization: `Token ${token}` },
-            });
-            setShowAddTaskModal(false);
-            // The task lists will refresh when user navigates to them
-          } catch (error) {
-            console.error('Failed to add task:', error);
-            throw error;
-          }
-        }}
-        loading={false}
+        onClose={() => !addTaskLoading && setShowAddTaskModal(false)}
+        onSubmit={handleAddTask}
+        loading={addTaskLoading}
         mode="add"
       />
     </>
