@@ -60,7 +60,17 @@ interface TaskFormModalProps {
   onClose: () => void;
   onSubmit: (task: { task_title: string; task_details: string; due_date: string }) => Promise<void>;
   loading?: boolean;
+  minLoadingTime?: number; // Minimum time to show loading state (ms)
 }
+
+// Minimum delay helper to ensure loading state is visible
+const withMinDelay = async <T,>(promise: Promise<T>, minMs: number): Promise<T> => {
+  const [result] = await Promise.all([
+    promise,
+    new Promise(resolve => setTimeout(resolve, minMs)),
+  ]);
+  return result;
+};
 
 export function TaskFormModal({
   visible,
@@ -68,7 +78,8 @@ export function TaskFormModal({
   task,
   onClose,
   onSubmit,
-  loading,
+  loading: externalLoading,
+  minLoadingTime = 500,
 }: TaskFormModalProps) {
   const colorScheme = useColorScheme();
   const colors = themes[colorScheme === 'dark' ? 'dark' : 'light'];
@@ -78,6 +89,10 @@ export function TaskFormModal({
   const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [internalLoading, setInternalLoading] = useState(false);
+  
+  // Use internal loading state if external is not provided
+  const loading = externalLoading !== undefined ? externalLoading : internalLoading;
 
   // Pre-fill form when editing
   useEffect(() => {
@@ -103,12 +118,18 @@ export function TaskFormModal({
     }
 
     setError('');
+    setInternalLoading(true);
+    
     try {
-      await onSubmit({
-        task_title: title.trim(),
-        task_details: description.trim(),
-        due_date: dueDate,
-      });
+      // Use minimum delay to ensure loading state is visible for better UX
+      await withMinDelay(
+        onSubmit({
+          task_title: title.trim(),
+          task_details: description.trim(),
+          due_date: dueDate,
+        }),
+        minLoadingTime
+      );
       // Reset form and close only on success
       setTitle('');
       setDescription('');
@@ -117,6 +138,8 @@ export function TaskFormModal({
     } catch (err) {
       // Don't close on error, show error message
       setError(mode === 'edit' ? 'Failed to update task' : 'Failed to create task');
+    } finally {
+      setInternalLoading(false);
     }
   };
 

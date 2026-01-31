@@ -6,6 +6,16 @@ import { isOverdue } from '@/components/tasks';
 
 export type TaskPageType = 'today-tasks' | 'next-week' | 'all';
 
+// Minimum delay helper to ensure loading state is visible for better UX
+const MIN_LOADING_TIME = 500;
+const withMinDelay = async <T,>(promise: Promise<T>, minMs: number = MIN_LOADING_TIME): Promise<T> => {
+  const [result] = await Promise.all([
+    promise,
+    new Promise(resolve => setTimeout(resolve, minMs)),
+  ]);
+  return result;
+};
+
 interface UseTasksOptions {
   pageType: TaskPageType;
   sortOverdueFirst?: boolean;
@@ -283,9 +293,12 @@ export function useTasks({ pageType, sortOverdueFirst = true }: UseTasksOptions)
   const handleToggleComplete = useCallback(async (task: Task) => {
     setActionLoading(task.id);
     try {
-      const res = await api.post(`api/tasks/task_complete/${task.id}/`, {
-        url_call,
-      });
+      // Use minimum delay to ensure loading state is visible for better UX
+      const res = await withMinDelay(
+        api.post(`api/tasks/task_complete/${task.id}/`, {
+          url_call,
+        })
+      );
       const data = res.data;
       const updatedTask = data.task ?? { ...task, status: !task.status };
 

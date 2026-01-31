@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { DueDate } from './DueDate';
@@ -129,11 +129,14 @@ export function TaskItem({
             styles.checkbox,
             { borderColor: colors.primary },
             task.status && [styles.checkboxCompleted, { backgroundColor: colors.success, borderColor: colors.success }],
+            loading && { borderColor: colors.primary, backgroundColor: 'transparent' },
           ]}
         >
-          {task.status && (
+          {loading ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : task.status ? (
             <Ionicons name="checkmark" size={16} color="#fff" />
-          )}
+          ) : null}
         </View>
       </Pressable>
 
